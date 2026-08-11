@@ -1,0 +1,11 @@
+{
+    "display_name": "Social Calendar & Events Engine",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "Capy",
+    "version": "1.0.0",
+    "homePage": ""
+}
