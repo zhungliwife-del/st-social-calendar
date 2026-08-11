@@ -2,17 +2,22 @@
 // Keeps an in-RP date, injects "today on campus" + upcoming events into the prompt,
 // and announces events in chat when the date lands on them. EN/RU UI.
 
+const VERSION = '1.2.0';
 const MODULE = 'st-social-calendar';
 const INJECT_KEY = 'social_calendar';
 
 const L10N = {
     en: {
-        title: '📅 Social Calendar',
+        title: `📅 Social Calendar v${VERSION}`,
         enabled: 'Enabled',
         inject: 'Inject date & events into prompt',
         announce: 'Announce events in chat when the day arrives',
         popup: 'Popup notification when the day arrives',
         worldHolidays: 'Include base world holidays',
+        universe: 'Universe events',
+        profileUniversity: 'Hale University',
+        profileVoodoo: 'Voodoo & Bayou',
+        profileEmpty: 'Empty / custom only',
         language: 'Language',
         today: 'In-RP date',
         nextDay: '+1 day',
@@ -32,17 +37,21 @@ const L10N = {
         months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         injectToday: (d) => `[In-RP calendar: today is ${d}.`,
         injectEvent: (name, prompt) => `TODAY'S EVENT — ${name}: ${prompt} NPCs are aware of it and react accordingly.`,
-        injectUpcoming: 'Upcoming campus events:',
+        injectUpcoming: 'Upcoming events:',
         injectFooter: ']',
-        announceMsg: (name, prompt) => `📅 <b>Today on campus: ${name}</b><br>${prompt}`,
+        announceMsg: (name, prompt) => `📅 <b>Today: ${name}</b><br>${prompt}`, 
     },
     ru: {
-        title: '📅 Социальный календарь',
+        title: `📅 Социальный календарь v${VERSION}`,
         enabled: 'Включено',
         inject: 'Внедрять дату и события в промпт',
         announce: 'Объявлять события в чате, когда наступает их день',
         popup: 'Всплывающее уведомление при наступлении дня',
         worldHolidays: 'Добавить базовые мировые праздники',
+        universe: 'События вселенной',
+        profileUniversity: 'Hale University',
+        profileVoodoo: 'Voodoo & Bayou',
+        profileEmpty: 'Пусто / только свои',
         language: 'Язык',
         today: 'Дата в RP',
         nextDay: '+1 день',
@@ -62,9 +71,9 @@ const L10N = {
         months: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
         injectToday: (d) => `[Внутриигровой календарь: сегодня ${d}.`,
         injectEvent: (name, prompt) => `СОБЫТИЕ СЕГОДНЯ — ${name}: ${prompt} NPC знают о нём и реагируют соответственно.`,
-        injectUpcoming: 'Ближайшие события кампуса:',
+        injectUpcoming: 'Ближайшие события:',
         injectFooter: ']',
-        announceMsg: (name, prompt) => `📅 <b>Сегодня на кампусе: ${name}</b><br>${prompt}`,
+        announceMsg: (name, prompt) => `📅 <b>Сегодня: ${name}</b><br>${prompt}`, 
     },
 };
 
@@ -77,6 +86,94 @@ const DEFAULT_EVENTS = [
     { date: '04-06', name: 'Greek Week', prompt: 'A week of competitions between Greek houses: games, pranks, sabotage, and old rivalries flaring up.' },
     { date: '05-08', name: 'Spring Formal', prompt: 'The biggest social event of the spring. Everyone needs a date; social hierarchy is on full display.' },
 ];
+
+const DEFAULT_UNIVERSITY_EVENTS = DEFAULT_EVENTS;
+
+const DEFAULT_VOODOO_EVENTS = [
+    {
+        date: '01-06',
+        name: 'Carnival season opens in New Orleans',
+        nameRu: 'Старт карнавального сезона в Новом Орлеане',
+        prompt: 'King cakes, krewe planning, drunk tourists and crowded streets give both gangs cover for quiet meetings and risky moves.',
+        promptRu: 'King cakes, подготовка крю, пьяные туристы и толпы на улицах дают обеим бандам прикрытие для тихих встреч и рискованных ходов.',
+    },
+    {
+        date: '02-13',
+        name: 'Zion Masquerade Night',
+        nameRu: 'Маскарадная ночь в Club Zion',
+        prompt: 'Club Zion hosts a masked pre-Mardi Gras night. Neutral-ground rules are tested while everyone hides behind masks.',
+        promptRu: 'В Club Zion проходит маскарад перед Mardi Gras. Правила нейтральной территории трещат, пока все прячутся за масками.',
+    },
+    {
+        date: '03-15',
+        name: 'Truce Anniversary',
+        nameRu: 'Годовщина перемирия',
+        prompt: 'The fragile truce between Voodoo Boys and Bayou Crew is remembered with forced civility, old grief and quiet threats.',
+        promptRu: 'Хрупкое перемирие Voodoo Boys и Bayou Crew вспоминают с натянутой вежливостью, старой болью и тихими угрозами.',
+    },
+    {
+        date: '04-22',
+        name: 'Port Authority Inspection Week',
+        nameRu: 'Неделя проверок портовой администрации',
+        prompt: 'Port inspections threaten Voodoo Boys shipments. Bribes, forged papers and sudden disappearances become urgent.',
+        promptRu: 'Портовые проверки угрожают грузам Voodoo Boys. Взятки, поддельные бумаги и внезапные исчезновения становятся срочными.',
+    },
+    {
+        date: '06-06',
+        name: 'Bayou Memorial Night',
+        nameRu: 'Ночь памяти в Байю',
+        prompt: 'The Bayou Crew honors the dead from the old gang war. Loyalty speeches, drinking, grief and revenge talk fill the swamp.',
+        promptRu: 'Bayou Crew поминает погибших в старой войне. Болото наполняется тостами за верность, горем и разговорами о мести.',
+    },
+    {
+        date: '07-17',
+        name: 'CASH Casino High-Roller Weekend',
+        nameRu: 'Уикенд хайроллеров в CASH Casino',
+        prompt: 'High rollers arrive at CASH Casino. Money laundering, private rooms, blackmail and polite threats are everywhere.',
+        promptRu: 'В CASH Casino приезжают хайроллеры. Отмыв денег, частные комнаты, шантаж и вежливые угрозы — повсюду.',
+    },
+    {
+        date: '08-09',
+        name: 'Swamp Run',
+        nameRu: 'Болотный прогон',
+        prompt: 'Bayou Crew moves contraband through marsh routes. Outsiders get lost, phones die and the wrong boat can start a firefight.',
+        promptRu: 'Bayou Crew гонит контрабанду через болотные маршруты. Чужие теряются, телефоны умирают, а не та лодка может начать перестрелку.',
+    },
+    {
+        date: '09-15',
+        name: 'City Heat Spike',
+        nameRu: 'Всплеск городского давления',
+        prompt: 'Rumors of federal attention and old debts circulate. Everyone checks loyalties, ledgers and escape routes.',
+        promptRu: 'Ходят слухи о федеральном внимании и старых долгах. Все проверяют лояльность, бухгалтерию и пути отхода.',
+    },
+    {
+        date: '10-31',
+        name: 'Voodoo Night',
+        nameRu: 'Ночь Вуду',
+        prompt: 'Halloween gives the French Quarter masks, crowds and supernatural theater. The Voodoo Boys can move almost unseen.',
+        promptRu: 'Хэллоуин даёт French Quarter маски, толпы и мистический театр. Voodoo Boys могут двигаться почти незаметно.',
+    },
+    {
+        date: '11-02',
+        name: 'All Souls Bayou Rite',
+        nameRu: 'Байю-обряд на День всех душ',
+        prompt: 'Candles, water, grief and old bargains return. The swamp remembers names the city tries to forget.',
+        promptRu: 'Свечи, вода, скорбь и старые сделки возвращаются. Болото помнит имена, которые город пытается забыть.',
+    },
+    {
+        date: '12-12',
+        name: 'Zion Winter Summit',
+        nameRu: 'Зимний саммит в Zion',
+        prompt: 'Baron hosts a winter summit at Club Zion. Neutral territory fills with envoys, surveillance and offers no one can refuse.',
+        promptRu: 'Барон проводит зимний саммит в Club Zion. Нейтральная территория заполняется посланниками, наблюдением и предложениями, от которых сложно отказаться.',
+    },
+];
+
+const PROFILE_EVENTS = {
+    university: DEFAULT_UNIVERSITY_EVENTS,
+    voodoo: DEFAULT_VOODOO_EVENTS,
+    empty: [],
+};
 
 const DEFAULT_WORLD_EVENTS = [
     {
@@ -172,9 +269,10 @@ const defaultSettings = {
     announce: true,
     popup: true,
     worldHolidays: true,
+    calendarProfile: 'university',
     currentDate: '2026-09-01',
     lastAnnounced: '',
-    events: structuredClone(DEFAULT_EVENTS),
+    events: [],
 };
 
 function ctx() { return SillyTavern.getContext(); }
@@ -185,6 +283,7 @@ function settings() {
     for (const k of Object.keys(defaultSettings)) {
         if (es[MODULE][k] === undefined) es[MODULE][k] = structuredClone(defaultSettings[k]);
     }
+    if (!PROFILE_EVENTS[es[MODULE].calendarProfile]) es[MODULE].calendarProfile = 'university';
     return es[MODULE];
 }
 
@@ -217,9 +316,16 @@ function eventPrompt(e) {
 
 function allEvents() {
     const s = settings();
-    const builtins = s.worldHolidays ? DEFAULT_WORLD_EVENTS.map(e => ({ ...e, builtin: true })) : [];
+    const profileEvents = (PROFILE_EVENTS[s.calendarProfile] || []).map(e => ({ ...e, builtin: true, profile: s.calendarProfile }));
+    const holidays = s.worldHolidays ? DEFAULT_WORLD_EVENTS.map(e => ({ ...e, builtin: true, profile: 'world' })) : [];
     const custom = s.events.map((e, customIndex) => ({ ...e, customIndex }));
-    return [...builtins, ...custom];
+    const seen = new Set();
+    return [...profileEvents, ...holidays, ...custom].filter(e => {
+        const key = `${e.date}|${eventName(e)}|${eventPrompt(e)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 function shiftDate(days) {
@@ -341,6 +447,14 @@ function renderPanel() {
                 <label class="checkbox_label"><input type="checkbox" id="scal_popup" ${s.popup ? 'checked' : ''}><span>${loc.popup}</span></label>
                 <label class="checkbox_label"><input type="checkbox" id="scal_world" ${s.worldHolidays ? 'checked' : ''}><span>${loc.worldHolidays}</span></label>
                 <div class="scal-lang">
+                    <span>${loc.universe}:</span>
+                    <select id="scal_profile" class="text_pole">
+                        <option value="voodoo" ${s.calendarProfile === 'voodoo' ? 'selected' : ''}>${loc.profileVoodoo}</option>
+                        <option value="university" ${s.calendarProfile === 'university' ? 'selected' : ''}>${loc.profileUniversity}</option>
+                        <option value="empty" ${s.calendarProfile === 'empty' ? 'selected' : ''}>${loc.profileEmpty}</option>
+                    </select>
+                </div>
+                <div class="scal-lang">
                     <span>${loc.language}:</span>
                     <select id="scal_lang" class="text_pole">
                         <option value="en" ${s.lang === 'en' ? 'selected' : ''}>English</option>
@@ -376,6 +490,7 @@ function renderPanel() {
     $('#scal_announce').on('change', function () { s.announce = this.checked; save(); });
     $('#scal_popup').on('change', function () { s.popup = this.checked; save(); });
     $('#scal_world').on('change', function () { s.worldHolidays = this.checked; save(); renderEvents(); updateInjection(); announceIfNeeded(); });
+    $('#scal_profile').on('change', function () { s.calendarProfile = this.value; s.lastAnnounced = ''; save(); renderEvents(); updateInjection(); announceIfNeeded(); });
     $('#scal_lang').on('change', function () { s.lang = this.value; save(); renderPanel(); updateInjection(); });
     $('#scal_prev').on('click', () => shiftDate(-1));
     $('#scal_next').on('click', () => shiftDate(1));
