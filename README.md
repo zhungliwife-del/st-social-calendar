@@ -1,15 +1,21 @@
 # 📅 Social Calendar & Events Engine — SillyTavern Extension
 
-**EN:** Keeps an in-RP date with day-of-week for campus roleplay. Injects "today is…", today's event, and upcoming events into the prompt; announces an event in chat with a system message when its day arrives. Ships with the Hale University social calendar (Rush Week, Homecoming, Knights season opener, Greek Week, Spring Formal…) — fully editable. UI in English or Russian.
+Ведёт внутриигровую дату, добавляет события дня и ближайшие события в промпт, а при наступлении даты показывает всплывающее уведомление и/или системное сообщение в чат.
 
-**RU:** Ведёт внутриигровую дату с днём недели для кампусного RP. Внедряет «сегодня…», событие дня и ближайшие события в промпт; объявляет событие в чате системным сообщением, когда наступает его день. Идёт с готовым календарём Hale University — полностью редактируемым. Интерфейс на английском или русском.
+## Что есть
 
-## Install / Установка
+- Календарь Hale University: Rush Week, Homecoming, Knights season opener, Greek Week, Spring Formal и другие важные даты.
+- Базовые мировые праздники: Новый год, старт карнавального сезона, День святого Валентина, День святого Патрика, Хэллоуин, Рождество и др.
+- Свои события: дата `MM-DD`, название и контекст для ИИ.
+- Всплывающее уведомление, когда наступает день события.
+- Системное сообщение в чат по желанию.
+- Инжект в промпт: сегодняшняя дата, события дня и ближайшие события.
+- EN/RU интерфейс.
+
+## Установка
 
 Extensions → Install extension → `https://github.com/zhungliwife-del/st-social-calendar`
 
-Or copy this folder to `SillyTavern/data/<user>/extensions/` (ST 1.12+) / Или скопируйте папку в `SillyTavern/data/<пользователь>/extensions/`.
+## Использование
 
-## Usage / Использование
-
-Open the panel in **Extensions**, set the in-RP date, add or edit events (MM-DD + name + context for the AI), and advance the date with **+1 day / +1 week** as your RP progresses. / Откройте панель в **Extensions**, задайте дату, добавьте события (ММ-ДД + название + контекст для ИИ) и продвигайте дату кнопками **+1 день / +1 неделя** по ходу RP.
+Открой панель **Social Calendar**, выставь дату RP и двигай её кнопками **+1 день / +1 неделя**. Когда дата совпадает с событием, расширение покажет уведомление и добавит событие в контекст модели.

@@ -11,6 +11,8 @@ const L10N = {
         enabled: 'Enabled',
         inject: 'Inject date & events into prompt',
         announce: 'Announce events in chat when the day arrives',
+        popup: 'Popup notification when the day arrives',
+        worldHolidays: 'Include base world holidays',
         language: 'Language',
         today: 'In-RP date',
         nextDay: '+1 day',
@@ -23,6 +25,9 @@ const L10N = {
         promptPh: 'What happens (context for the AI)…',
         datePh: 'MM-DD',
         remove: 'Remove',
+        builtIn: 'built-in',
+        custom: 'custom',
+        popupTitle: 'Calendar event',
         weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
         months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         injectToday: (d) => `[In-RP calendar: today is ${d}.`,
@@ -36,6 +41,8 @@ const L10N = {
         enabled: 'Включено',
         inject: 'Внедрять дату и события в промпт',
         announce: 'Объявлять события в чате, когда наступает их день',
+        popup: 'Всплывающее уведомление при наступлении дня',
+        worldHolidays: 'Добавить базовые мировые праздники',
         language: 'Язык',
         today: 'Дата в RP',
         nextDay: '+1 день',
@@ -48,6 +55,9 @@ const L10N = {
         promptPh: 'Что происходит (контекст для ИИ)…',
         datePh: 'ММ-ДД',
         remove: 'Удалить',
+        builtIn: 'базовый',
+        custom: 'свой',
+        popupTitle: 'Событие календаря',
         weekdays: ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'],
         months: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
         injectToday: (d) => `[Внутриигровой календарь: сегодня ${d}.`,
@@ -68,11 +78,100 @@ const DEFAULT_EVENTS = [
     { date: '05-08', name: 'Spring Formal', prompt: 'The biggest social event of the spring. Everyone needs a date; social hierarchy is on full display.' },
 ];
 
+const DEFAULT_WORLD_EVENTS = [
+    {
+        date: '01-01',
+        name: "New Year's Day",
+        nameRu: 'Новый год',
+        prompt: 'New Year begins: fireworks, hangovers, resolutions, closed offices, and people checking who survived the night.',
+        promptRu: 'Начинается новый год: фейерверки, похмелье, обещания начать заново, закрытые офисы и разговоры о том, кто пережил ночь.',
+    },
+    {
+        date: '01-06',
+        name: "King's Day / Carnival season begins",
+        nameRu: 'День королей / старт карнавального сезона',
+        prompt: 'Carnival season begins. In New Orleans, king cakes appear, krewes start preparing, and party energy creeps into the city.',
+        promptRu: 'Начинается карнавальный сезон. В Новом Орлеане появляются king cakes, крю готовятся к парадам, город постепенно заряжается праздником.',
+    },
+    {
+        date: '02-14',
+        name: "Valentine's Day",
+        nameRu: 'День святого Валентина',
+        prompt: 'Valentine’s Day pushes romance, jealousy, dates, gifts, messy exes, and public couple drama into the foreground.',
+        promptRu: 'День святого Валентина выводит на первый план романтику, ревность, свидания, подарки, бывших и публичные драмы пар.',
+    },
+    {
+        date: '03-17',
+        name: "St. Patrick's Day",
+        nameRu: 'День святого Патрика',
+        prompt: 'Bars are packed, green clothes are everywhere, drunk crowds spill into the streets, and opportunists use the chaos.',
+        promptRu: 'Бары забиты, все в зелёном, пьяные толпы вываливаются на улицы, а те, кому выгоден хаос, пользуются моментом.',
+    },
+    {
+        date: '04-01',
+        name: "April Fools' Day",
+        nameRu: 'День дурака',
+        prompt: 'Pranks, fake rumors, staged scandals, and suspiciously convenient lies are everywhere today.',
+        promptRu: 'Сегодня повсюду розыгрыши, фальшивые слухи, постановочные скандалы и слишком удобная ложь.',
+    },
+    {
+        date: '05-01',
+        name: 'May Day / International Workers’ Day',
+        nameRu: 'Первомай / День труда',
+        prompt: 'Labor marches, day-off energy, protests, and public gatherings can reshape the city’s rhythm today.',
+        promptRu: 'Марши, выходной настрой, протесты и массовые собрания меняют ритм города.',
+    },
+    {
+        date: '07-04',
+        name: 'Independence Day',
+        nameRu: 'День независимости США',
+        prompt: 'Fireworks, police presence, crowded streets, rooftops, barbecues, and patriotic public events dominate the day.',
+        promptRu: 'Фейерверки, усиленная полиция, толпы на улицах, крыши, барбекю и патриотические мероприятия задают тон дню.',
+    },
+    {
+        date: '10-31',
+        name: 'Halloween',
+        nameRu: 'Хэллоуин',
+        prompt: 'Costumes, masks, haunted parties, pranks, and easy anonymity make the night dangerous and dramatic.',
+        promptRu: 'Костюмы, маски, вечеринки с хоррор-темой, розыгрыши и удобная анонимность делают ночь опасной и драматичной.',
+    },
+    {
+        date: '11-11',
+        name: 'Veterans Day / Remembrance Day',
+        nameRu: 'День ветеранов / День памяти',
+        prompt: 'Memorial events, uniforms, old war stories, grief, pride, and public ceremonies surface today.',
+        promptRu: 'Сегодня всплывают памятные мероприятия, форма, старые военные истории, гордость, скорбь и публичные церемонии.',
+    },
+    {
+        date: '12-24',
+        name: 'Christmas Eve',
+        nameRu: 'Сочельник',
+        prompt: 'Families gather, last-minute gifts move through the city, churches fill up, and lonely people feel the holiday pressure hardest.',
+        promptRu: 'Семьи собираются, город живёт последними подарками, церкви заполняются, а одинокие сильнее всего чувствуют давление праздника.',
+    },
+    {
+        date: '12-25',
+        name: 'Christmas Day',
+        nameRu: 'Рождество',
+        prompt: 'Christmas quiets the city in some places and intensifies family drama in others: gifts, dinners, absences, grudges, and reconciliations.',
+        promptRu: 'Рождество где-то затихает город, а где-то усиливает семейные драмы: подарки, ужины, отсутствующие люди, обиды и примирения.',
+    },
+    {
+        date: '12-31',
+        name: "New Year's Eve",
+        nameRu: 'Канун Нового года',
+        prompt: 'The city parties hard: countdowns, champagne, fireworks, packed clubs, dangerous roads, and last decisions before midnight.',
+        promptRu: 'Город празднует на полную: обратный отсчёт, шампанское, фейерверки, забитые клубы, опасные дороги и последние решения до полуночи.',
+    },
+];
+
 const defaultSettings = {
     lang: 'en',
     enabled: true,
     inject: true,
     announce: true,
+    popup: true,
+    worldHolidays: true,
     currentDate: '2026-09-01',
     lastAnnounced: '',
     events: structuredClone(DEFAULT_EVENTS),
@@ -108,6 +207,21 @@ function mmdd(d) {
     return String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+function eventName(e) {
+    return settings().lang === 'ru' && e.nameRu ? e.nameRu : e.name;
+}
+
+function eventPrompt(e) {
+    return settings().lang === 'ru' && e.promptRu ? e.promptRu : e.prompt;
+}
+
+function allEvents() {
+    const s = settings();
+    const builtins = s.worldHolidays ? DEFAULT_WORLD_EVENTS.map(e => ({ ...e, builtin: true })) : [];
+    const custom = s.events.map((e, customIndex) => ({ ...e, customIndex }));
+    return [...builtins, ...custom];
+}
+
 function shiftDate(days) {
     const d = dateObj();
     d.setDate(d.getDate() + days);
@@ -118,7 +232,7 @@ function shiftDate(days) {
 
 function todaysEvents() {
     const key = mmdd(dateObj());
-    return settings().events.filter(e => e.date === key);
+    return allEvents().filter(e => e.date === key);
 }
 
 function upcomingEvents(withinDays = 21) {
@@ -129,7 +243,7 @@ function upcomingEvents(withinDays = 21) {
         const d = new Date(base);
         d.setDate(d.getDate() + i);
         const key = mmdd(d);
-        for (const e of s.events.filter(ev => ev.date === key)) {
+        for (const e of allEvents().filter(ev => ev.date === key)) {
             result.push({ ...e, inDays: i });
         }
     }
@@ -146,13 +260,13 @@ function updateInjection() {
     const loc = t();
     const parts = [loc.injectToday(formatDate(dateObj()))];
     for (const e of todaysEvents()) {
-        parts.push(loc.injectEvent(e.name, e.prompt));
+        parts.push(loc.injectEvent(eventName(e), eventPrompt(e)));
     }
     const upcoming = upcomingEvents();
     if (upcoming.length) {
         parts.push(loc.injectUpcoming);
         for (const e of upcoming.slice(0, 5)) {
-            parts.push(`- ${e.name} (+${e.inDays}d): ${e.prompt}`);
+            parts.push(`- ${eventName(e)} (+${e.inDays}d): ${eventPrompt(e)}`);
         }
     }
     parts.push(loc.injectFooter);
@@ -161,16 +275,21 @@ function updateInjection() {
 
 async function announceIfNeeded() {
     const s = settings();
-    if (!s.enabled || !s.announce) return;
+    if (!s.enabled || (!s.announce && !s.popup)) return;
     if (s.lastAnnounced === s.currentDate) return;
     const events = todaysEvents();
     if (!events.length) return;
     s.lastAnnounced = s.currentDate;
     save();
     for (const e of events) {
-        const text = t().announceMsg(e.name, e.prompt).replace(/\|/g, '¦');
-        await ctx().executeSlashCommandsWithOptions?.(`/sys compact=true ${text}`)
-            ?? ctx().executeSlashCommands?.(`/sys compact=true ${text}`);
+        const name = eventName(e);
+        const prompt = eventPrompt(e);
+        if (s.popup) toastr.info(prompt, `${t().popupTitle}: ${name}`, { timeOut: 9000, extendedTimeOut: 3000 });
+        if (s.announce) {
+            const text = t().announceMsg(name, prompt).replace(/\|/g, '¦');
+            await ctx().executeSlashCommandsWithOptions?.(`/sys compact=true ${text}`)
+                ?? ctx().executeSlashCommands?.(`/sys compact=true ${text}`);
+        }
     }
 }
 
@@ -184,14 +303,15 @@ function onDateChanged() {
 function renderEvents() {
     const s = settings();
     const list = $('#scal_events').empty();
-    const sorted = [...s.events].sort((a, b) => a.date.localeCompare(b.date));
+    const sorted = [...allEvents()].sort((a, b) => a.date.localeCompare(b.date) || eventName(a).localeCompare(eventName(b)));
     for (const e of sorted) {
-        const idx = s.events.indexOf(e);
+        const idx = e.customIndex;
         const row = $(`
-            <div class="scal-event">
+            <div class="scal-event ${e.builtin ? 'scal-builtin' : ''}">
                 <span class="scal-event-date">${e.date}</span>
-                <span class="scal-event-name" title="${e.prompt}">${e.name}</span>
-                <div class="menu_button scal-del" title="${t().remove}">🗑️</div>
+                <span class="scal-event-name" title="${eventPrompt(e)}">${eventName(e)}</span>
+                <span class="scal-badge">${e.builtin ? t().builtIn : t().custom}</span>
+                ${e.builtin ? '' : `<div class="menu_button scal-del" title="${t().remove}">🗑️</div>`}
             </div>`);
         row.find('.scal-del').on('click', () => {
             s.events.splice(idx, 1);
@@ -218,6 +338,8 @@ function renderPanel() {
                 <label class="checkbox_label"><input type="checkbox" id="scal_enabled" ${s.enabled ? 'checked' : ''}><span>${loc.enabled}</span></label>
                 <label class="checkbox_label"><input type="checkbox" id="scal_inject" ${s.inject ? 'checked' : ''}><span>${loc.inject}</span></label>
                 <label class="checkbox_label"><input type="checkbox" id="scal_announce" ${s.announce ? 'checked' : ''}><span>${loc.announce}</span></label>
+                <label class="checkbox_label"><input type="checkbox" id="scal_popup" ${s.popup ? 'checked' : ''}><span>${loc.popup}</span></label>
+                <label class="checkbox_label"><input type="checkbox" id="scal_world" ${s.worldHolidays ? 'checked' : ''}><span>${loc.worldHolidays}</span></label>
                 <div class="scal-lang">
                     <span>${loc.language}:</span>
                     <select id="scal_lang" class="text_pole">
@@ -252,6 +374,8 @@ function renderPanel() {
     $('#scal_enabled').on('change', function () { s.enabled = this.checked; save(); updateInjection(); });
     $('#scal_inject').on('change', function () { s.inject = this.checked; save(); updateInjection(); });
     $('#scal_announce').on('change', function () { s.announce = this.checked; save(); });
+    $('#scal_popup').on('change', function () { s.popup = this.checked; save(); });
+    $('#scal_world').on('change', function () { s.worldHolidays = this.checked; save(); renderEvents(); updateInjection(); announceIfNeeded(); });
     $('#scal_lang').on('change', function () { s.lang = this.value; save(); renderPanel(); updateInjection(); });
     $('#scal_prev').on('click', () => shiftDate(-1));
     $('#scal_next').on('click', () => shiftDate(1));
