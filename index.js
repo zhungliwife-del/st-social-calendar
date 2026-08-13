@@ -2,7 +2,7 @@
 // Keeps an in-RP date, injects "today on campus" + upcoming events into the prompt,
 // and announces events in chat when the date lands on them. EN/RU UI.
 
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 const MODULE = 'st-social-calendar';
 const INJECT_KEY = 'social_calendar';
 
@@ -13,10 +13,11 @@ const L10N = {
         inject: 'Inject date & events into prompt',
         announce: 'Announce events in chat when the day arrives',
         popup: 'Popup notification when the day arrives',
-        worldHolidays: 'Include base world holidays',
+        worldHolidays: 'Include world holidays',
+        newOrleansHolidays: 'Include New Orleans holidays',
         universe: 'Universe events',
         profileUniversity: 'Hale University',
-        profileVoodoo: 'Voodoo & Bayou',
+        profileVoodoo: 'Voodoo & Bayou (lore only)',
         profileEmpty: 'Empty / custom only',
         language: 'Language',
         today: 'In-RP date',
@@ -30,6 +31,10 @@ const L10N = {
         promptPh: 'What happens (context for the AI)…',
         datePh: 'MM-DD',
         remove: 'Remove',
+        badgeWorld: 'world',
+        badgeNola: 'New Orleans',
+        badgeLore: 'lore',
+        badgeUniversity: 'university',
         builtIn: 'built-in',
         custom: 'custom',
         popupTitle: 'Calendar event',
@@ -47,10 +52,11 @@ const L10N = {
         inject: 'Внедрять дату и события в промпт',
         announce: 'Объявлять события в чате, когда наступает их день',
         popup: 'Всплывающее уведомление при наступлении дня',
-        worldHolidays: 'Добавить базовые мировые праздники',
+        worldHolidays: 'Добавить мировые праздники',
+        newOrleansHolidays: 'Добавить праздники Нового Орлеана',
         universe: 'События вселенной',
         profileUniversity: 'Hale University',
-        profileVoodoo: 'Voodoo & Bayou',
+        profileVoodoo: 'Voodoo & Bayou (lore only)',
         profileEmpty: 'Пусто / только свои',
         language: 'Язык',
         today: 'Дата в RP',
@@ -64,6 +70,10 @@ const L10N = {
         promptPh: 'Что происходит (контекст для ИИ)…',
         datePh: 'ММ-ДД',
         remove: 'Удалить',
+        badgeWorld: 'мировой',
+        badgeNola: 'Новый Орлеан',
+        badgeLore: 'лор',
+        badgeUniversity: 'универ',
         builtIn: 'базовый',
         custom: 'свой',
         popupTitle: 'Событие календаря',
@@ -90,82 +100,66 @@ const DEFAULT_EVENTS = [
 const DEFAULT_UNIVERSITY_EVENTS = DEFAULT_EVENTS;
 
 const DEFAULT_VOODOO_EVENTS = [
+    // The attached Voodoo & Bayou lorebook does not define exact recurring calendar dates.
+    // Do not invent canon dates here; use custom events for campaign-specific anniversaries.
+];
+
+const DEFAULT_NEW_ORLEANS_EVENTS = [
     {
         date: '01-06',
-        name: 'Carnival season opens in New Orleans',
-        nameRu: 'Старт карнавального сезона в Новом Орлеане',
-        prompt: 'King cakes, krewe planning, drunk tourists and crowded streets give both gangs cover for quiet meetings and risky moves.',
-        promptRu: 'King cakes, подготовка крю, пьяные туристы и толпы на улицах дают обеим бандам прикрытие для тихих встреч и рискованных ходов.',
+        name: 'Twelfth Night / Carnival season begins',
+        nameRu: 'Двенадцатая ночь / старт карнавального сезона',
+        prompt: 'Carnival season begins in New Orleans: king cakes appear, krewes start preparations, and the city shifts toward parade season.',
+        promptRu: 'В Новом Орлеане начинается карнавальный сезон: появляются king cakes, крю готовятся к парадам, а город входит в праздничный ритм.',
     },
     {
-        date: '02-13',
-        name: 'Zion Masquerade Night',
-        nameRu: 'Маскарадная ночь в Club Zion',
-        prompt: 'Club Zion hosts a masked pre-Mardi Gras night. Neutral-ground rules are tested while everyone hides behind masks.',
-        promptRu: 'В Club Zion проходит маскарад перед Mardi Gras. Правила нейтральной территории трещат, пока все прячутся за масками.',
+        date: '2026-02-17',
+        name: 'Mardi Gras Day 2026',
+        nameRu: 'Марди Гра 2026',
+        prompt: 'Mardi Gras takes over New Orleans: parades, masks, costumes, crowds, closed streets, heavy police presence and perfect cover for secret movement.',
+        promptRu: 'Марди Гра захватывает Новый Орлеан: парады, маски, костюмы, толпы, перекрытые улицы, усиленная полиция и идеальное прикрытие для тайных перемещений.',
     },
     {
-        date: '03-15',
-        name: 'Truce Anniversary',
-        nameRu: 'Годовщина перемирия',
-        prompt: 'The fragile truce between Voodoo Boys and Bayou Crew is remembered with forced civility, old grief and quiet threats.',
-        promptRu: 'Хрупкое перемирие Voodoo Boys и Bayou Crew вспоминают с натянутой вежливостью, старой болью и тихими угрозами.',
+        date: '2027-02-09',
+        name: 'Mardi Gras Day 2027',
+        nameRu: 'Марди Гра 2027',
+        prompt: 'Mardi Gras takes over New Orleans: parades, masks, costumes, crowds, closed streets, heavy police presence and perfect cover for secret movement.',
+        promptRu: 'Марди Гра захватывает Новый Орлеан: парады, маски, костюмы, толпы, перекрытые улицы, усиленная полиция и идеальное прикрытие для тайных перемещений.',
     },
     {
-        date: '04-22',
-        name: 'Port Authority Inspection Week',
-        nameRu: 'Неделя проверок портовой администрации',
-        prompt: 'Port inspections threaten Voodoo Boys shipments. Bribes, forged papers and sudden disappearances become urgent.',
-        promptRu: 'Портовые проверки угрожают грузам Voodoo Boys. Взятки, поддельные бумаги и внезапные исчезновения становятся срочными.',
+        date: '2028-02-29',
+        name: 'Mardi Gras Day 2028',
+        nameRu: 'Марди Гра 2028',
+        prompt: 'Mardi Gras takes over New Orleans: parades, masks, costumes, crowds, closed streets, heavy police presence and perfect cover for secret movement.',
+        promptRu: 'Марди Гра захватывает Новый Орлеан: парады, маски, костюмы, толпы, перекрытые улицы, усиленная полиция и идеальное прикрытие для тайных перемещений.',
     },
     {
-        date: '06-06',
-        name: 'Bayou Memorial Night',
-        nameRu: 'Ночь памяти в Байю',
-        prompt: 'The Bayou Crew honors the dead from the old gang war. Loyalty speeches, drinking, grief and revenge talk fill the swamp.',
-        promptRu: 'Bayou Crew поминает погибших в старой войне. Болото наполняется тостами за верность, горем и разговорами о мести.',
-    },
-    {
-        date: '07-17',
-        name: 'CASH Casino High-Roller Weekend',
-        nameRu: 'Уикенд хайроллеров в CASH Casino',
-        prompt: 'High rollers arrive at CASH Casino. Money laundering, private rooms, blackmail and polite threats are everywhere.',
-        promptRu: 'В CASH Casino приезжают хайроллеры. Отмыв денег, частные комнаты, шантаж и вежливые угрозы — повсюду.',
-    },
-    {
-        date: '08-09',
-        name: 'Swamp Run',
-        nameRu: 'Болотный прогон',
-        prompt: 'Bayou Crew moves contraband through marsh routes. Outsiders get lost, phones die and the wrong boat can start a firefight.',
-        promptRu: 'Bayou Crew гонит контрабанду через болотные маршруты. Чужие теряются, телефоны умирают, а не та лодка может начать перестрелку.',
-    },
-    {
-        date: '09-15',
-        name: 'City Heat Spike',
-        nameRu: 'Всплеск городского давления',
-        prompt: 'Rumors of federal attention and old debts circulate. Everyone checks loyalties, ledgers and escape routes.',
-        promptRu: 'Ходят слухи о федеральном внимании и старых долгах. Все проверяют лояльность, бухгалтерию и пути отхода.',
+        date: '03-19',
+        name: "St. Joseph's Day altars",
+        nameRu: 'Алтари святого Иосифа',
+        prompt: 'St. Joseph’s Day altars and Italian-Catholic community traditions appear across New Orleans: food, family visits, favors and old neighborhood ties matter.',
+        promptRu: 'По Новому Орлеану появляются алтари святого Иосифа и итало-католические традиции: еда, семейные визиты, услуги и старые связи района имеют вес.',
     },
     {
         date: '10-31',
-        name: 'Voodoo Night',
-        nameRu: 'Ночь Вуду',
-        prompt: 'Halloween gives the French Quarter masks, crowds and supernatural theater. The Voodoo Boys can move almost unseen.',
-        promptRu: 'Хэллоуин даёт French Quarter маски, толпы и мистический театр. Voodoo Boys могут двигаться почти незаметно.',
+        name: 'Halloween in the French Quarter',
+        nameRu: 'Хэллоуин во French Quarter',
+        prompt: 'Halloween crowds flood the French Quarter. Masks and costumes make surveillance harder, nightlife louder, and bad decisions easier.',
+        promptRu: 'Толпы Хэллоуина заполняют French Quarter. Маски и костюмы усложняют слежку, делают ночную жизнь громче и облегчают плохие решения.',
     },
     {
-        date: '11-02',
-        name: 'All Souls Bayou Rite',
-        nameRu: 'Байю-обряд на День всех душ',
-        prompt: 'Candles, water, grief and old bargains return. The swamp remembers names the city tries to forget.',
-        promptRu: 'Свечи, вода, скорбь и старые сделки возвращаются. Болото помнит имена, которые город пытается забыть.',
+        date: '11-01',
+        name: "All Saints' Day cemetery visits",
+        nameRu: 'День всех святых / посещение кладбищ',
+        prompt: 'New Orleans cemetery visits and remembrance traditions bring families, grief, old promises and quiet meetings among the tombs.',
+        promptRu: 'Традиция посещать кладбища в Новом Орлеане приносит семьи, скорбь, старые обещания и тихие встречи среди гробниц.',
     },
     {
-        date: '12-12',
-        name: 'Zion Winter Summit',
-        nameRu: 'Зимний саммит в Zion',
-        prompt: 'Baron hosts a winter summit at Club Zion. Neutral territory fills with envoys, surveillance and offers no one can refuse.',
-        promptRu: 'Барон проводит зимний саммит в Club Zion. Нейтральная территория заполняется посланниками, наблюдением и предложениями, от которых сложно отказаться.',
+        date: '12-24',
+        name: 'Reveillon / Christmas Eve in New Orleans',
+        nameRu: 'Ревейон / сочельник в Новом Орлеане',
+        prompt: 'Reveillon dinners, church services and Christmas Eve traditions fill New Orleans with family obligations, late meals and private conversations.',
+        promptRu: 'Ревейон-ужины, церковные службы и рождественские традиции наполняют Новый Орлеан семейными обязанностями, поздними ужинами и личными разговорами.',
     },
 ];
 
@@ -182,13 +176,6 @@ const DEFAULT_WORLD_EVENTS = [
         nameRu: 'Новый год',
         prompt: 'New Year begins: fireworks, hangovers, resolutions, closed offices, and people checking who survived the night.',
         promptRu: 'Начинается новый год: фейерверки, похмелье, обещания начать заново, закрытые офисы и разговоры о том, кто пережил ночь.',
-    },
-    {
-        date: '01-06',
-        name: "King's Day / Carnival season begins",
-        nameRu: 'День королей / старт карнавального сезона',
-        prompt: 'Carnival season begins. In New Orleans, king cakes appear, krewes start preparing, and party energy creeps into the city.',
-        promptRu: 'Начинается карнавальный сезон. В Новом Орлеане появляются king cakes, крю готовятся к парадам, город постепенно заряжается праздником.',
     },
     {
         date: '02-14',
@@ -269,10 +256,12 @@ const defaultSettings = {
     announce: true,
     popup: true,
     worldHolidays: true,
+    newOrleansHolidays: true,
     calendarProfile: 'university',
     currentDate: '2026-09-01',
     lastAnnounced: '',
     events: [],
+    migrationVersion: 0,
 };
 
 function ctx() { return SillyTavern.getContext(); }
@@ -284,11 +273,38 @@ function settings() {
         if (es[MODULE][k] === undefined) es[MODULE][k] = structuredClone(defaultSettings[k]);
     }
     if (!PROFILE_EVENTS[es[MODULE].calendarProfile]) es[MODULE].calendarProfile = 'university';
+    cleanupLegacyGeneratedEvents(es[MODULE]);
     return es[MODULE];
 }
 
 function t() { return L10N[settings().lang] || L10N.en; }
 function save() { ctx().saveSettingsDebounced(); }
+
+function eventKey(e) { return `${e.date}|${e.name}`; }
+
+const LEGACY_GENERATED_EVENT_KEYS = new Set([
+    ...DEFAULT_UNIVERSITY_EVENTS.map(eventKey),
+    ...[
+        ['01-06', 'Carnival season opens in New Orleans'],
+        ['02-13', 'Zion Masquerade Night'],
+        ['03-15', 'Truce Anniversary'],
+        ['04-22', 'Port Authority Inspection Week'],
+        ['06-06', 'Bayou Memorial Night'],
+        ['07-17', 'CASH Casino High-Roller Weekend'],
+        ['08-09', 'Swamp Run'],
+        ['09-15', 'City Heat Spike'],
+        ['10-31', 'Voodoo Night'],
+        ['11-02', 'All Souls Bayou Rite'],
+        ['12-12', 'Zion Winter Summit'],
+    ].map(([date, name]) => `${date}|${name}`),
+]);
+
+function cleanupLegacyGeneratedEvents(s) {
+    if (s.migrationVersion >= 3) return;
+    s.events = (s.events || []).filter(e => !LEGACY_GENERATED_EVENT_KEYS.has(eventKey(e)));
+    s.migrationVersion = 3;
+    save();
+}
 
 function dateObj() {
     return new Date(settings().currentDate + 'T12:00:00');
@@ -306,6 +322,19 @@ function mmdd(d) {
     return String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+function isoDate(d) {
+    return d.toISOString().slice(0, 10);
+}
+
+function eventMatchesDate(event, d) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(event.date) ? event.date === isoDate(d) : event.date === mmdd(d);
+}
+
+function eventSortValue(event) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(event.date)) return event.date;
+    return `9999-${event.date}`;
+}
+
 function eventName(e) {
     return settings().lang === 'ru' && e.nameRu ? e.nameRu : e.name;
 }
@@ -317,10 +346,11 @@ function eventPrompt(e) {
 function allEvents() {
     const s = settings();
     const profileEvents = (PROFILE_EVENTS[s.calendarProfile] || []).map(e => ({ ...e, builtin: true, profile: s.calendarProfile }));
+    const nola = s.newOrleansHolidays ? DEFAULT_NEW_ORLEANS_EVENTS.map(e => ({ ...e, builtin: true, profile: 'nola' })) : [];
     const holidays = s.worldHolidays ? DEFAULT_WORLD_EVENTS.map(e => ({ ...e, builtin: true, profile: 'world' })) : [];
     const custom = s.events.map((e, customIndex) => ({ ...e, customIndex }));
     const seen = new Set();
-    return [...profileEvents, ...holidays, ...custom].filter(e => {
+    return [...profileEvents, ...nola, ...holidays, ...custom].filter(e => {
         const key = `${e.date}|${eventName(e)}|${eventPrompt(e)}`;
         if (seen.has(key)) return false;
         seen.add(key);
@@ -337,8 +367,8 @@ function shiftDate(days) {
 }
 
 function todaysEvents() {
-    const key = mmdd(dateObj());
-    return allEvents().filter(e => e.date === key);
+    const d = dateObj();
+    return allEvents().filter(e => eventMatchesDate(e, d));
 }
 
 function upcomingEvents(withinDays = 21) {
@@ -348,8 +378,7 @@ function upcomingEvents(withinDays = 21) {
     for (let i = 1; i <= withinDays; i++) {
         const d = new Date(base);
         d.setDate(d.getDate() + i);
-        const key = mmdd(d);
-        for (const e of allEvents().filter(ev => ev.date === key)) {
+        for (const e of allEvents().filter(ev => eventMatchesDate(ev, d))) {
             result.push({ ...e, inDays: i });
         }
     }
@@ -409,14 +438,15 @@ function onDateChanged() {
 function renderEvents() {
     const s = settings();
     const list = $('#scal_events').empty();
-    const sorted = [...allEvents()].sort((a, b) => a.date.localeCompare(b.date) || eventName(a).localeCompare(eventName(b)));
+    const sorted = [...allEvents()].sort((a, b) => eventSortValue(a).localeCompare(eventSortValue(b)) || eventName(a).localeCompare(eventName(b)));
+    const badge = (e) => e.profile === 'world' ? t().badgeWorld : e.profile === 'nola' ? t().badgeNola : e.profile === 'university' ? t().badgeUniversity : e.profile === 'voodoo' ? t().badgeLore : t().custom;
     for (const e of sorted) {
         const idx = e.customIndex;
         const row = $(`
             <div class="scal-event ${e.builtin ? 'scal-builtin' : ''}">
                 <span class="scal-event-date">${e.date}</span>
                 <span class="scal-event-name" title="${eventPrompt(e)}">${eventName(e)}</span>
-                <span class="scal-badge">${e.builtin ? t().builtIn : t().custom}</span>
+                <span class="scal-badge">${badge(e)}</span>
                 ${e.builtin ? '' : `<div class="menu_button scal-del" title="${t().remove}">🗑️</div>`}
             </div>`);
         row.find('.scal-del').on('click', () => {
@@ -446,6 +476,7 @@ function renderPanel() {
                 <label class="checkbox_label"><input type="checkbox" id="scal_announce" ${s.announce ? 'checked' : ''}><span>${loc.announce}</span></label>
                 <label class="checkbox_label"><input type="checkbox" id="scal_popup" ${s.popup ? 'checked' : ''}><span>${loc.popup}</span></label>
                 <label class="checkbox_label"><input type="checkbox" id="scal_world" ${s.worldHolidays ? 'checked' : ''}><span>${loc.worldHolidays}</span></label>
+                <label class="checkbox_label"><input type="checkbox" id="scal_nola" ${s.newOrleansHolidays ? 'checked' : ''}><span>${loc.newOrleansHolidays}</span></label>
                 <div class="scal-lang">
                     <span>${loc.universe}:</span>
                     <select id="scal_profile" class="text_pole">
@@ -490,6 +521,7 @@ function renderPanel() {
     $('#scal_announce').on('change', function () { s.announce = this.checked; save(); });
     $('#scal_popup').on('change', function () { s.popup = this.checked; save(); });
     $('#scal_world').on('change', function () { s.worldHolidays = this.checked; save(); renderEvents(); updateInjection(); announceIfNeeded(); });
+    $('#scal_nola').on('change', function () { s.newOrleansHolidays = this.checked; save(); renderEvents(); updateInjection(); announceIfNeeded(); });
     $('#scal_profile').on('change', function () { s.calendarProfile = this.value; s.lastAnnounced = ''; save(); renderEvents(); updateInjection(); announceIfNeeded(); });
     $('#scal_lang').on('change', function () { s.lang = this.value; save(); renderPanel(); updateInjection(); });
     $('#scal_prev').on('click', () => shiftDate(-1));
